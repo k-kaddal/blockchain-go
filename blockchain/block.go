@@ -1,42 +1,37 @@
 package blockchain
 
-import (
-	"bytes"
-	"crypto/sha256"
-)
-
-type BlockChain struct {
+type Chain struct {
 	Blocks []*Block
 }
 
 type Block struct {
-	Hash     []byte
-	Data     []byte
-	PrevHash []byte
+	Hash      []byte
+	Data      []byte
+	PrevBlock []byte
+	Nonce     int
 }
 
-func (b *Block) DeriveBlock() {
-	info := bytes.Join([][]byte{b.Data, b.PrevHash}, []byte{})
-	hash := sha256.Sum256(info)
-	b.Hash = hash[:]
+func CreateBlock(data string, prevHash []byte) *Block {
+	block := &Block{[]byte{}, []byte(data), prevHash, 0}
+	// run proof of work
+	pow := NewProof(block)
+	nonce, hash := pow.Run()
+
+	block.Hash = hash[:]
+	block.Nonce = nonce
+	return block
 }
 
-func CreateBlock(data string, prevBlock []byte) *Block {
-	newBlock := &Block{[]byte{}, []byte(data), []byte(prevBlock)}
-	newBlock.DeriveBlock()
-	return newBlock
-}
-
-func (chain *BlockChain) AddBlock(data string) {
+func (chain *Chain) AddBlock(data string) {
 	prevBlock := chain.Blocks[len(chain.Blocks)-1]
 	newBlock := CreateBlock(data, prevBlock.Hash)
 	chain.Blocks = append(chain.Blocks, newBlock)
 }
 
 func Genesis() *Block {
-	return CreateBlock("Genesis", []byte{})
+	return CreateBlock("Genisis", []byte{})
 }
 
-func InitBlockChain() *BlockChain {
-	return &BlockChain{[]*Block{Genesis()}}
+func InitChain() *Chain {
+	return &Chain{[]*Block{Genesis()}}
 }
